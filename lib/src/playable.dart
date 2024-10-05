@@ -130,12 +130,7 @@ class Metas {
           onImageLoadFail == onImageLoadFail;
 
   @override
-  int get hashCode =>
-      title.hashCode ^
-      artist.hashCode ^
-      album.hashCode ^
-      image.hashCode ^
-      onImageLoadFail.hashCode;
+  int get hashCode => title.hashCode ^ artist.hashCode ^ album.hashCode ^ image.hashCode ^ onImageLoadFail.hashCode;
 
   Metas copyWith({
     String? id,
@@ -159,50 +154,44 @@ class Metas {
 }
 
 //Placeholder for future DRM Types
-enum DrmType{ token, widevine, fairplay, clearKey }
+enum DrmType { token, widevine, fairplay, clearKey }
 
-class DrmConfiguration{
-   final DrmType drmType;
-   final String? clearKey;
+class DrmConfiguration {
+  final DrmType drmType;
+  final String? clearKey;
 
-   DrmConfiguration._(this.drmType,{this.clearKey});
+  DrmConfiguration._(this.drmType, {this.clearKey});
 
-   factory DrmConfiguration.clearKey({String? clearKey, Map<String,String>? keys}){
-     if(keys!=null) clearKey  = _generate(keys);
-     var drmConfiguration = DrmConfiguration._(DrmType.clearKey,clearKey: clearKey);
-     return drmConfiguration;
-   }
+  factory DrmConfiguration.clearKey({String? clearKey, Map<String, String>? keys}) {
+    if (keys != null) clearKey = _generate(keys);
+    var drmConfiguration = DrmConfiguration._(DrmType.clearKey, clearKey: clearKey);
+    return drmConfiguration;
+  }
 
+  static String _generate(Map<String, String> keys, {String type = 'temporary'}) {
+    Map keyMap = <String, dynamic>{'type': type};
+    keyMap['keys'] = <Map<String, String>>[];
+    keys.forEach((key, value) => keyMap['keys'].add({'kty': 'oct', 'kid': _base64(key), 'k': _base64(value)}));
+    return jsonEncode(keyMap);
+  }
 
-    static String _generate(Map<String, String> keys,
-       {String type = 'temporary'}) {
-     Map keyMap = <String, dynamic>{'type': type};
-     keyMap['keys'] = <Map<String, String>>[];
-     keys.forEach((key, value) => keyMap['keys']
-         .add({'kty': 'oct', 'kid': _base64(key), 'k': _base64(value)}));
-     return jsonEncode(keyMap);
-   }
+  static String _base64(String source) {
+    return base64.encode(_encodeBigInt(BigInt.parse(source, radix: 16))).replaceAll('=', '');
+  }
 
-   static String _base64(String source) {
-     return base64
-         .encode(_encodeBigInt(BigInt.parse(source, radix: 16)))
-         .replaceAll('=', '');
-   }
+  static final _byteMask = BigInt.from(0xff);
 
-    static final _byteMask = BigInt.from(0xff);
+  static Uint8List _encodeBigInt(BigInt number) {
+    var size = (number.bitLength + 7) >> 3;
 
-    static Uint8List _encodeBigInt(BigInt number) {
-     var size = (number.bitLength + 7) >> 3;
-
-     final result = Uint8List(size);
-     var pos = size - 1;
-     for (var i = 0; i < size; i++) {
-       result[pos--] = (number & _byteMask).toInt();
-       number = number >> 8;
-     }
-     return result;
-   }
-
+    final result = Uint8List(size);
+    var pos = size - 1;
+    for (var i = 0; i < size; i++) {
+      result[pos--] = (number & _byteMask).toInt();
+      number = number >> 8;
+    }
+    return result;
+  }
 }
 
 class Audio extends Playable {
@@ -220,17 +209,17 @@ class Audio extends Playable {
 
   Map<String, String>? get networkHeaders => _networkHeaders;
 
-  Audio._({
-    required this.path,
-    required this.audioType,
-    this.package,
-    this.cached,
-    this.pitch,
-    this.playSpeed,
-    Map<String, String>? headers,
-    Metas? metas,
-    this.drmConfiguration
-  })  : _metas = metas ?? Metas(),
+  Audio._(
+      {required this.path,
+      required this.audioType,
+      this.package,
+      this.cached,
+      this.pitch,
+      this.playSpeed,
+      Map<String, String>? headers,
+      Metas? metas,
+      this.drmConfiguration})
+      : _metas = metas ?? Metas(),
         _networkHeaders = headers;
 
   Audio(
@@ -257,27 +246,21 @@ class Audio extends Playable {
         cached = false,
         _metas = metas ?? Metas();
 
-  Audio.network(
-    this.path, {
-    Metas? metas,
-    Map<String, String>? headers,
-    this.cached = false,
-    this.playSpeed,
-    this.pitch,
-    this.drmConfiguration
-  })  : audioType = AudioType.network,
+  Audio.network(this.path,
+      {Metas? metas,
+      Map<String, String>? headers,
+      this.cached = false,
+      this.playSpeed,
+      this.pitch,
+      this.drmConfiguration})
+      : audioType = AudioType.network,
         package = null,
         _networkHeaders = headers,
         _metas = metas ?? Metas();
 
-  Audio.liveStream(
-    this.path, {
-    Metas? metas,
-    this.playSpeed,
-    this.pitch,
-    Map<String, String>? headers,
-    this.drmConfiguration
-  })  : audioType = AudioType.liveStream,
+  Audio.liveStream(this.path,
+      {Metas? metas, this.playSpeed, this.pitch, Map<String, String>? headers, this.drmConfiguration})
+      : audioType = AudioType.liveStream,
         package = null,
         _networkHeaders = headers,
         cached = false,
@@ -297,12 +280,7 @@ class Audio extends Playable {
 
   @override
   int get hashCode =>
-      path.hashCode ^
-      package.hashCode ^
-      audioType.hashCode ^
-      metas.hashCode ^
-      playSpeed.hashCode ^
-      cached.hashCode;
+      path.hashCode ^ package.hashCode ^ audioType.hashCode ^ metas.hashCode ^ playSpeed.hashCode ^ cached.hashCode;
 
   @override
   String toString() {
@@ -323,31 +301,29 @@ class Audio extends Playable {
       extra: extra,
       image: image,
     );
-    super.currentlyOpenedIn.forEach((playerEditor) {
+    for (var playerEditor in super.currentlyOpenedIn) {
       playerEditor.onAudioMetasUpdated(this);
-    });
+    }
   }
 
-  Audio copyWith({
-    String? path,
-    String? package,
-    AudioType? audioType,
-    Metas? metas,
-    double? playSpeed,
-    Map<String, String>? headers,
-    bool? cached,
-    DrmConfiguration? drmConfiguration
-  }) {
+  Audio copyWith(
+      {String? path,
+      String? package,
+      AudioType? audioType,
+      Metas? metas,
+      double? playSpeed,
+      Map<String, String>? headers,
+      bool? cached,
+      DrmConfiguration? drmConfiguration}) {
     return Audio._(
-      path: path ?? this.path,
-      package: package ?? this.package,
-      audioType: audioType ?? this.audioType,
-      metas: metas ?? _metas,
-      headers: headers ?? _networkHeaders,
-      playSpeed: playSpeed ?? this.playSpeed,
-      cached: cached ?? this.cached,
-      drmConfiguration: drmConfiguration??this.drmConfiguration
-    );
+        path: path ?? this.path,
+        package: package ?? this.package,
+        audioType: audioType ?? this.audioType,
+        metas: metas ?? _metas,
+        headers: headers ?? _networkHeaders,
+        playSpeed: playSpeed ?? this.playSpeed,
+        cached: cached ?? this.cached,
+        drmConfiguration: drmConfiguration ?? this.drmConfiguration);
   }
 }
 
@@ -388,9 +364,9 @@ class Playlist extends Playable {
   Playlist add(Audio audio) {
     audios.add(audio);
     final index = audios.length - 1;
-    super.currentlyOpenedIn.forEach((playerEditor) {
+    for (var playerEditor in super.currentlyOpenedIn) {
       playerEditor.onAudioAddedAt(index);
-    });
+    }
     return this;
   }
 
@@ -398,9 +374,9 @@ class Playlist extends Playable {
     if (index >= 0) {
       if (index < audios.length) {
         audios.insert(index, audio);
-        super.currentlyOpenedIn.forEach((playerEditor) {
+        for (var playerEditor in super.currentlyOpenedIn) {
           playerEditor.onAudioAddedAt(index);
-        });
+        }
       } else {
         return add(audio);
       }
@@ -408,15 +384,14 @@ class Playlist extends Playable {
     return this;
   }
 
-  Playlist replaceAt(int index, PlaylistAudioReplacer replacer,
-      {bool keepPlayingPositionIfCurrent = false}) {
+  Playlist replaceAt(int index, PlaylistAudioReplacer replacer, {bool keepPlayingPositionIfCurrent = false}) {
     if (index < audios.length) {
       final oldElement = audios.elementAt(index);
       final newElement = replacer(oldElement);
       audios[index] = newElement;
-      super.currentlyOpenedIn.forEach((playerEditor) {
+      for (var playerEditor in super.currentlyOpenedIn) {
         playerEditor.onAudioReplacedAt(index, keepPlayingPositionIfCurrent);
-      });
+      }
     }
     return this;
   }
@@ -429,18 +404,18 @@ class Playlist extends Playable {
   bool remove(Audio audio) {
     final index = audios.indexOf(audio);
     final removed = audios.remove(audio);
-    super.currentlyOpenedIn.forEach((playerEditor) {
+    for (var playerEditor in super.currentlyOpenedIn) {
       playerEditor.onAudioRemovedAt(index);
-    });
+    }
     // here maybe stop the player if playing this index
     return removed;
   }
 
   Audio removeAtIndex(int index) {
     final removedAudio = audios.removeAt(index);
-    super.currentlyOpenedIn.forEach((playerEditor) {
+    for (var playerEditor in super.currentlyOpenedIn) {
       playerEditor.onAudioRemovedAt(index);
-    });
+    }
     return removedAudio;
   }
 
@@ -451,10 +426,7 @@ class Playlist extends Playable {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Playlist &&
-          runtimeType == other.runtimeType &&
-          audios == other.audios &&
-          startIndex == other.startIndex;
+      other is Playlist && runtimeType == other.runtimeType && audios == other.audios && startIndex == other.startIndex;
 
   @override
   int get hashCode => audios.hashCode ^ startIndex.hashCode;
@@ -466,17 +438,14 @@ void writeAudioMetasInto(Map<String, dynamic> params, Metas? metas) {
     if (metas.artist != null) params['song.artist'] = metas.artist;
     if (metas.album != null) params['song.album'] = metas.album;
     writeAudioImageMetasInto(params, metas.image);
-    writeAudioImageMetasInto(params, metas.onImageLoadFail,
-        suffix: '.onLoadFail');
+    writeAudioImageMetasInto(params, metas.onImageLoadFail, suffix: '.onLoadFail');
     if (metas.id != null) {
       params['song.trackID'] = metas.id;
     }
   }
 }
 
-void writeAudioImageMetasInto(
-    Map<String, dynamic> params, MetasImage? metasImage,
-    {String suffix = ''}) {
+void writeAudioImageMetasInto(Map<String, dynamic> params, MetasImage? metasImage, {String suffix = ''}) {
   if (metasImage != null) {
     params['song.image$suffix'] = metasImage.path;
     params['song.imageType$suffix'] = imageTypeDescription(metasImage.type);

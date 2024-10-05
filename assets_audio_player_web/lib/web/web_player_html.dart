@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:html' as html;
 
-import 'package:flutter/services.dart';
-
 import 'abstract_web_player.dart';
 
 /// Web Player
 class WebPlayerHtml extends WebPlayer {
   @override
-  WebPlayerHtml({required MethodChannel channel}) : super(channel: channel);
+  WebPlayerHtml({required super.channel});
 
   StreamSubscription? _onEndListener;
   StreamSubscription? _onCanPlayListener;
